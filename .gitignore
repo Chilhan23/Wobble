@@ -1,0 +1,32 @@
+# Binaries and build artifacts
+tmp/
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Environment variables & secrets
+.env
+.env.local
+
+# Uploads & Media Storage
+uploads/*
+!uploads/.gitkeep
+
+# Tests
+test/
+
+# Logs
+*.log
+build-errors.log
+
+# IDE & OS specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+
