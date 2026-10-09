@@ -270,8 +270,8 @@ func (h *WebhookHandler) handleMessage(ctx context.Context, msg *Message) {
 			})
 		}
 
-		_, _ = h.client.SendMessage(ctx, h.chatID, &msg.MessageThreadID, "✅ <i>Tiket telah ditutup. Pengguna diminta mengisi rating CSAT di layar web.</i>", nil)
-		_ = h.client.CloseForumTopic(ctx, h.chatID, msg.MessageThreadID)
+		// Hapus topic agar tidak menumpuk di supergroup
+		_ = h.client.DeleteForumTopic(ctx, h.chatID, msg.MessageThreadID)
 
 		// Edit kartu di General jika ada
 		if tck.TGCardMessageID != nil && *tck.TGCardMessageID > 0 {

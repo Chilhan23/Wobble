@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wobble Helpdesk — Test & Demo Client</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card-bg: rgba(18, 26, 41, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --bubble-user: #0284c7;
+      --bubble-other: #1e293b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body {
+      background: radial-gradient(circle at 10% 20%, #172554 0%, var(--bg) 90%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      width: 100%;
+      max-width: 900px;
+      height: 90vh;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    }
+    /* Sidebar */
+    .sidebar {
+      padding: 24px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: rgba(11, 15, 23, 0.5);
+      overflow-y: auto;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary);
+      border-radius: 999px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .input {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .input:focus {
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.07);
+    }
+    .btn {
+      background: var(--primary);
+      color: #041320;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.3); }
+
+    .status-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 0.8rem;
+    }
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .status-val { font-weight: 600; color: var(--text); }
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #64748b;
+      margin-right: 6px;
+    }
+    .status-dot.connected { background: var(--success); box-shadow: 0 0 10px var(--success); }
+
+    /* Main Chat Panel */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .chat-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-title { font-weight: 600; font-size: 1rem; }
+    .chat-desc { font-size: 0.75rem; color: var(--text-muted); }
+
+    .messages-container {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .msg-wrapper {
+      display: flex;
+      flex-direction: column;
+      max-width: 75%;
+    }
+    .msg-wrapper.user { align-self: flex-end; align-items: flex-end; }
+    .msg-wrapper.other { align-self: flex-start; align-items: flex-start; }
+    .msg-sender {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      padding: 0 4px;
+    }
+    .msg-bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .msg-wrapper.user .msg-bubble {
+      background: var(--bubble-user);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg-wrapper.other .msg-bubble {
+      background: var(--bubble-other);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .msg-img {
+      max-width: 240px;
+      border-radius: 8px;
+      margin-top: 8px;
+      display: block;
+    }
+    .typing-indicator {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-style: italic;
+      display: none;
+      margin-left: 8px;
+      margin-bottom: 8px;
+    }
+
+    /* Input area */
+    .input-area {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: rgba(11, 15, 23, 0.7);
+    }
+    .input-msg {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .input-msg:focus { border-color: var(--primary); }
+    .file-label {
+      cursor: pointer;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+    .file-label:hover { color: var(--text); background: rgba(255,255,255,0.1); }
+
+    /* Modal / Rating */
+    .rating-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(11, 15, 23, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+    .rating-modal {
+      background: #1e293b;
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      text-align: center;
+      width: 320px;
+    }
+    .stars { display: flex; justify-content: center; gap: 8px; margin: 16px 0; font-size: 1.8rem; cursor: pointer; }
+    .star { color: #475569; transition: color 0.2s; }
+    .star.active { color: #f59e0b; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="brand">
+      <span>⚡ Wobble</span>
+      <span class="badge">Live Test</span>
+    </div>
+
+    <div class="form-group">
+      <label>Server URL</label>
+      <input id="serverUrl" class="input" value="http://localhost:8080" />
+    </div>
+
+    <div class="form-group">
+      <label>Tenant API Key</label>
+      <input id="apiKey" class="input" placeholder="Masukkan API Key" value="" />
+    </div>
+
+    <div class="form-group">
+      <label>Nama Pengguna</label>
+      <input id="userName" class="input" value="Dr. Budi Santoso" />
+    </div>
+
+    <div class="form-group">
+      <label>Modul Aktif</label>
+      <input id="moduleName" class="input" value="Farmasi / Resep Obat" />
+    </div>
+
+    <button id="btnInit" class="btn" onclick="initTicket()">
+      🚀 Buka Tiket / Sesi
+    </button>
+
+    <div class="status-card">
+      <div class="status-row">
+        <span style="color: var(--text-muted)">Koneksi WS</span>
+        <span class="status-val"><span id="wsDot" class="status-dot"></span><span id="wsStatus">Offline</span></span>
+      </div>
+      <div class="status-row">
+        <span style="color: var(--text-muted)">Tiket ID</span>
+        <span id="ticketCode" class="status-val" style="font-family: monospace;">-</span>
+      </div>
+      <div class="status-row">
+        <span style="color: var(--text-muted)">Status</span>
+        <span id="ticketStatus" class="status-val">-</span>
+      </div>
+    </div>
+
+    <button id="btnResolve" class="btn btn-danger" onclick="resolveTicket()" disabled>
+      ✅ Selesaikan Tiket
+    </button>
+  </div>
+
+  <!-- Chat Panel -->
+  <div class="chat-panel">
+    <div class="chat-header">
+      <div>
+        <div class="chat-title">Live Chat Demo</div>
+        <div id="chatSubtitle" class="chat-desc">Tekan 'Buka Tiket' untuk memulai percakapan</div>
+      </div>
+    </div>
+
+    <div id="messagesContainer" class="messages-container">
+      <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 40px;">
+        Belum ada sesi aktif. Masukkan API Key lalu tekan <b>Buka Tiket</b>.
+      </div>
+    </div>
+
+    <div id="typingIndicator" class="typing-indicator">🤖 AI sedang mengetik...</div>
+
+    <div class="input-area">
+      <label class="file-label" title="Unggah Gambar">
+        📎
+        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="uploadFile()" disabled />
+      </label>
+      <input id="msgInput" class="input-msg" placeholder="Ketik pesan Anda di sini..." onkeydown="if(event.key==='Enter') sendMessage()" disabled />
+      <button id="btnSend" class="btn" style="padding: 12px 20px;" onclick="sendMessage()" disabled>
+        Kirim
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Rating CSAT -->
+<div id="ratingOverlay" class="rating-overlay">
+  <div class="rating-modal">
+    <h3>Penilaian Layanan (CSAT)</h3>
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">Bagaimana kepuasan Anda terhadap layanan helpdesk?</p>
+    <div class="stars">
+      <span class="star" onclick="setStar(1)">★</span>
+      <span class="star" onclick="setStar(2)">★</span>
+      <span class="star" onclick="setStar(3)">★</span>
+      <span class="star" onclick="setStar(4)">★</span>
+      <span class="star active" onclick="setStar(5)">★</span>
+    </div>
+    <input id="ratingReview" class="input" placeholder="Tulis ulasan (opsional)..." style="width: 100%; margin-bottom: 12px;" />
+    <button class="btn" style="width: 100%;" onclick="submitRating()">Kirim Penilaian</button>
+  </div>
+</div>
+
+<script>
+let currentToken = null;
+let currentTicketId = null;
+let ws = null;
+let selectedRating = 5;
+
+// Ambil default host dari window location jika dibuka dari /demo
+if (window.location.origin) {
+  document.getElementById('serverUrl').value = window.location.origin;
+}
+
+async function initTicket() {
+  const serverUrl = document.getElementById('serverUrl').value.replace(/\/$/, '');
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const userName = document.getElementById('userName').value.trim();
+  const moduleName = document.getElementById('moduleName').value.trim();
+
+  if (!apiKey) {
+    alert('Harap isi API Key Tenant terlebih dahulu.');
+    return;
+  }
+
+  document.getElementById('btnInit').disabled = true;
+  document.getElementById('btnInit').innerText = 'Menghubungkan...';
+
+  try {
+    const res = await fetch(`${serverUrl}/api/v1/tickets/init`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey
+      },
+      body: JSON.stringify({
+        user_id: 'usr_test_01',
+        user_name: userName,
+        module_name: moduleName,
+        diagnostic_info: {
+          browser: navigator.userAgent,
+          test_mode: true
+        }
+      })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const ticket = data.ticket || {};
+    currentToken = data.token;
+    currentTicketId = ticket.public_id || '';
+
+    const code = ticket.ticket_code || (currentTicketId ? currentTicketId.substring(0, 8) : 'TICKET');
+    document.getElementById('ticketCode').innerText = code;
+    document.getElementById('ticketStatus').innerText = ticket.status || 'open';
+    document.getElementById('chatSubtitle').innerText = `Tiket: ${code} • Modul: ${moduleName}`;
+
+    // Enable inputs
+    document.getElementById('msgInput').disabled = false;
+    document.getElementById('btnSend').disabled = false;
+    document.getElementById('fileInput').disabled = false;
+    document.getElementById('btnResolve').disabled = false;
+    document.getElementById('btnInit').innerText = '🔄 Re-Init';
+    document.getElementById('btnInit').disabled = false;
+
+    // Load message history
+    loadMessages();
+
+    // Connect WebSocket
+    connectWebSocket();
+
+  } catch (err) {
+    alert('Gagal inisialisasi tiket: ' + err.message);
+    document.getElementById('btnInit').disabled = false;
+    document.getElementById('btnInit').innerText = '🚀 Buka Tiket / Sesi';
+  }
+}
+
+async function loadMessages() {
+  const serverUrl = document.getElementById('serverUrl').value.replace(/\/$/, '');
+  try {
+    const res = await fetch(`${serverUrl}/api/v1/ticket/messages?limit=50`, {
+      headers: { 'Authorization': `Bearer ${currentToken}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const container = document.getElementById('messagesContainer');
+    container.innerHTML = '';
+
+    if (!data.messages || data.messages.length === 0) {
+      container.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 40px;">Sesi dimulai. Sampaikan kendala atau pertanyaan Anda.</div>';
+    } else {
+      data.messages.forEach(appendMessage);
+    }
+  } catch (e) {
+    console.error('Failed to load messages', e);
+  }
+}
+
+function connectWebSocket() {
+  if (ws) ws.close();
+
+  const serverUrl = document.getElementById('serverUrl').value.replace(/\/$/, '');
+  const wsUrl = serverUrl.replace(/^http/, 'ws') + `/ws?token=${currentToken}`;
+
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    document.getElementById('wsDot').classList.add('connected');
+    document.getElementById('wsStatus').innerText = 'Online';
+  };
+
+  ws.onclose = () => {
+    document.getElementById('wsDot').classList.remove('connected');
+    document.getElementById('wsStatus').innerText = 'Offline';
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      handleWSEvent(msg);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+}
+
+function handleWSEvent(payload) {
+  const { event, data } = payload;
+  const typing = document.getElementById('typingIndicator');
+
+  if (event === 'helpdesk_new_message') {
+    typing.style.display = 'none';
+    appendMessage(data);
+  } else if (event === 'ai_typing') {
+    typing.style.display = data.typing ? 'block' : 'none';
+  } else if (event === 'ticket_claimed') {
+    document.getElementById('ticketStatus').innerText = 'escalated';
+    appendSystemNotice(`Tiket telah diklaim oleh Engineer: <b>${data.programmer_name || 'Tim Support'}</b>`);
+  } else if (event === 'ticket_resolved') {
+    document.getElementById('ticketStatus').innerText = 'resolved';
+    document.getElementById('ratingOverlay').style.display = 'flex';
+  }
+}
+
+function appendMessage(msg) {
+  const container = document.getElementById('messagesContainer');
+  const isUser = msg.sender_type === 'user';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = `msg-wrapper ${isUser ? 'user' : 'other'}`;
+
+  const senderLabel = isUser ? 'Anda' : (msg.sender_name || (msg.sender_type === 'ai' ? '🤖 AI Assistant' : '👨‍💻 Tim Support'));
+  
+  let mediaHtml = '';
+  const mediaUrl = (msg.attachment && msg.attachment.url) ? msg.attachment.url : msg.media_url;
+  if (mediaUrl) {
+    mediaHtml = `<a href="${mediaUrl}" target="_blank"><img src="${mediaUrl}" class="msg-img" /></a>`;
+  }
+
+  const textContent = msg.message || msg.content || '';
+
+  wrapper.innerHTML = `
+    <div class="msg-sender">${senderLabel}</div>
+    <div class="msg-bubble">${escapeHtml(textContent)}${mediaHtml}</div>
+  `;
+
+  container.appendChild(wrapper);
+  container.scrollTop = container.scrollHeight;
+}
+
+function appendSystemNotice(text) {
+  const container = document.getElementById('messagesContainer');
+  const notice = document.createElement('div');
+  notice.style.textAlign = 'center';
+  notice.style.fontSize = '0.75rem';
+  notice.style.color = '#38bdf8';
+  notice.style.margin = '10px 0';
+  notice.innerHTML = `ℹ️ ${text}`;
+  container.appendChild(notice);
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const content = input.value.trim();
+  if (!content || !currentToken) return;
+
+  const serverUrl = document.getElementById('serverUrl').value.replace(/\/$/, '');
+  input.value = '';
+
+  try {
+    const res = await fetch(`${serverUrl}/api/v1/ticket/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentToken}`
+      },
+      body: JSON.stringify({
+        message: content
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert('Gagal mengirim pesan: ' + (err.message || res.statusText));
+    }
+  } catch (err) {
+    alert('Gagal mengirim pesan: ' + err.message);
+  }
+}
+
+async function uploadFile() {
+  const fileInput = document.getElementById('fileInput');
+  if (!fileInput.files || fileInput.files.length === 0 || !currentToken) return;
+
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('message', 'Mengirim lampiran gambar...');
+
+  const serverUrl = document.getElementById('serverUrl').value.replace(/\/$/, '');
+  try {
+    const res = await fetch(`${serverUrl}/api/v1/ticket/attachments`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${currentToken}` },
+      body: formData
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert('Upload gagal: ' + (err.message || res.statusText));
+      return;
+    }
+    fileInput.value = '';
+  } catch (e) {
+    alert('Gagal upload gambar: ' + e.message);
+  }
+}
+
+async function resolveTicket() {
+  if (!currentToken || !confirm('Apakah Anda yakin ingin menyelesaikan tiket ini?')) return;
+  const serverUrl = document.getElementById('serverUrl').value.replace(/\/$/, '');
+  try {
+    await fetch(`${serverUrl}/api/v1/ticket/resolve`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${currentToken}` }
+    });
+    document.getElementById('ratingOverlay').style.display = 'flex';
+  } catch (e) {
+    alert('Gagal menutup tiket');
+  }
+}
+
+function setStar(n) {
+  selectedRating = n;
+  const stars = document.querySelectorAll('.star');
+  stars.forEach((s, idx) => {
+    if (idx < n) s.classList.add('active');
+    else s.classList.remove('active');
+  });
+}
+
+async function submitRating() {
+  const review = document.getElementById('ratingReview').value;
+  const serverUrl = document.getElementById('serverUrl').value.replace(/\/$/, '');
+  try {
+    await fetch(`${serverUrl}/api/v1/ticket/rate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentToken}`
+      },
+      body: JSON.stringify({
+        rating: selectedRating,
+        review: review
+      })
+    });
+    document.getElementById('ratingOverlay').style.display = 'none';
+    alert('Terima kasih atas penilaian Anda!');
+  } catch (e) {
+    alert('Gagal kirim rating');
+  }
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+</script>
+</body>
+</html>

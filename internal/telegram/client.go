@@ -25,6 +25,7 @@ type Client interface {
 	EditMessageText(ctx context.Context, chatID int64, messageID int64, text string, replyMarkup *InlineKeyboardMarkup) error
 	CreateForumTopic(ctx context.Context, chatID int64, name string) (threadID int64, err error)
 	CloseForumTopic(ctx context.Context, chatID int64, threadID int64) error
+	DeleteForumTopic(ctx context.Context, chatID int64, threadID int64) error
 	AnswerCallbackQuery(ctx context.Context, callbackQueryID string, text string) error
 }
 
@@ -337,6 +338,28 @@ func (c *client) CloseForumTopic(ctx context.Context, chatID int64, threadID int
 	}
 	if !res.OK {
 		return fmt.Errorf("closeForumTopic api error: %s", res.Description)
+	}
+
+	return nil
+}
+
+func (c *client) DeleteForumTopic(ctx context.Context, chatID int64, threadID int64) error {
+	payload := map[string]any{
+		"chat_id":           chatID,
+		"message_thread_id": threadID,
+	}
+
+	body, err := c.doRequest(ctx, "deleteForumTopic", payload)
+	if err != nil {
+		return err
+	}
+
+	var res APIResponse[bool]
+	if err := json.Unmarshal(body, &res); err != nil {
+		return fmt.Errorf("failed to unmarshal deleteForumTopic response: %w", err)
+	}
+	if !res.OK {
+		return fmt.Errorf("deleteForumTopic api error: %s", res.Description)
 	}
 
 	return nil
