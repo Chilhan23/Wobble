@@ -38,6 +38,9 @@ func RequireAPIKey(tenantRepo tenant.Repository) gin.HandlerFunc {
 
 		hash := HashAPIKey(apiKey)
 		t, err := tenantRepo.GetByAPIKeyHash(c.Request.Context(), hash)
+		if err != nil || t == nil {
+			t, err = tenantRepo.GetByKeyIdentifier(c.Request.Context(), apiKey)
+		}
 		if err != nil || t == nil || !t.IsActive {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"status":  false,
@@ -127,7 +130,13 @@ func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-API-Key, X-Api-Key, X-Telegram-Bot-Api-Secret-Token")
+
+		reqHeaders := c.GetHeader("Access-Control-Request-Headers")
+		if reqHeaders != "" {
+			c.Header("Access-Control-Allow-Headers", reqHeaders)
+		} else {
+			c.Header("Access-Control-Allow-Headers", "*")
+		}
 
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)

@@ -154,9 +154,10 @@ func main() {
 		chatHandler.RegisterRoutes(apiV1, requireTicketToken, rateLimitChat, rateLimitUpload)
 	}
 
-	// Static Web Assets for Demo
+	// Static Web Assets & Widget
 	if _, err := os.Stat("./web"); err == nil {
 		router.Static("/demo", "./web")
+		router.Static("/assets", "./web/assets")
 	}
 
 	// 10. HTTP Server
