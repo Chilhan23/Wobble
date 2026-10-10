@@ -131,10 +131,9 @@ func (n *Notifier) SendToTopic(ctx context.Context, threadID int64, m *chat.Mess
 func (n *Notifier) NotifyTicketResolved(ctx context.Context, t *ticket.Ticket) error {
 	appName := n.getTenantDisplayName(ctx, t.TenantID)
 
-	// Tutup topik Forum di Telegram jika ada
+	// Hapus topik Forum di Telegram agar tidak menumpuk di Supergroup
 	if t.TelegramThreadID != nil && *t.TelegramThreadID > 0 {
-		_, _ = n.client.SendMessage(ctx, n.chatID, t.TelegramThreadID, "✅ <i>Tiket telah ditutup/selesai.</i>", nil)
-		_ = n.client.CloseForumTopic(ctx, n.chatID, *t.TelegramThreadID)
+		_ = n.client.DeleteForumTopic(ctx, n.chatID, *t.TelegramThreadID)
 	}
 
 	// Edit kartu di General untuk menghapus tombol Klaim dan menandai tiket selesai
@@ -164,20 +163,38 @@ func (n *Notifier) NotifyTicketResolved(ctx context.Context, t *ticket.Ticket) e
 }
 
 func (n *Notifier) NotifyTicketRating(ctx context.Context, t *ticket.Ticket, rating int16, review string) error {
-	if t.TelegramThreadID == nil || *t.TelegramThreadID == 0 {
-		return nil
-	}
-
 	stars := strings.Repeat("⭐", int(rating))
-	text := fmt.Sprintf(
-		"🌟 <b>RATING CSAT PENGGUNA</b>\n"+
-			"<b>Nilai:</b> %d / 5 %s\n",
-		rating, stars,
-	)
-	if review != "" {
-		text += fmt.Sprintf("<b>Ulasan:</b> <i>%s</i>\n", html.EscapeString(review))
+
+	// Update kartu di General untuk menampilkan rating dan ulasan pengguna
+	if t.TGCardMessageID != nil && *t.TGCardMessageID > 0 {
+		appName := n.getTenantDisplayName(ctx, t.TenantID)
+		progName := "Tim IT Support"
+		if t.AssignedProgrammer != nil && *t.AssignedProgrammer != "" {
+			progName = *t.AssignedProgrammer
+		}
+
+		reviewText := ""
+		if review != "" {
+			reviewText = fmt.Sprintf("\n<b>Ulasan:</b> <i>%s</i>", html.EscapeString(review))
+		}
+
+		cardText := fmt.Sprintf(
+			"🎫 <b>TIKET BANTUAN</b>\n"+
+				"<b>System:</b> %s\n"+
+				"<b>Kode:</b> <code>%s</code>\n"+
+				"<b>User:</b> %s\n"+
+				"<b>Modul:</b> %s\n\n"+
+				"✅ <b>SELESAI (Ditangani: %s)</b>\n"+
+				"🌟 <b>Rating:</b> %d/5 %s%s",
+			html.EscapeString(appName),
+			html.EscapeString(t.TicketCode),
+			html.EscapeString(t.UserName),
+			html.EscapeString(t.ModuleName),
+			html.EscapeString(progName),
+			rating, stars, reviewText,
+		)
+		_ = n.client.EditMessageText(ctx, n.chatID, *t.TGCardMessageID, cardText, nil)
 	}
 
-	_, err := n.client.SendMessage(ctx, n.chatID, t.TelegramThreadID, text, nil)
-	return err
+	return nil
 }
